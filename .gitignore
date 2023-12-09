@@ -1,0 +1,10 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.python-version
+
+# Project
+checkpoints/
+wandb/
+docker/wandb_key

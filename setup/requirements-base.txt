@@ -1,0 +1,15 @@
+gymnax==0.0.6
+evosax==0.1.4
+optax==0.1.5
+flax==0.6.11
+black==23.3.0
+pre-commit==3.3.3
+tensorflow==2.13.0
+tensorstore==0.1.40
+wandb==0.15.9
+matplotlib==3.7.1
+tqdm==4.65.0
+argparse==1.1
+dm_env==1.6
+bsuite==0.3.5
+pre-commit==3.3.3

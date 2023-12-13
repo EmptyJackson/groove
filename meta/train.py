@@ -87,7 +87,7 @@ def lpg_meta_grad_train_step(
             "lpg_loss": lpg_loss,
             "reg_lpg_loss": reg_lpg_loss,
             "value_loss": value_loss,
-            "lpg_agent": agent_metrics,
+            "lpg_agent": agent_metrics.as_dict(),
         }
         return reg_lpg_loss, (agent_state, value_critic_state, metrics)
 
@@ -161,7 +161,7 @@ def lpg_es_train_step(
             agent_state.actor_state,
             num_env_workers,
         )
-        return agent_state, candidate_fitness
+        return agent_state, candidate_fitness, metrics
 
     # --- Evaluate LPG candidates ---
     repeated_agent_states = jax.tree_map(
@@ -169,7 +169,7 @@ def lpg_es_train_step(
     )
     rng, _rng = jax.random.split(rng)
     _rng = jax.random.split(_rng, lpg_train_state.strategy.popsize)
-    repeated_agent_states, fitness = mini_batch_vmap(
+    repeated_agent_states, fitness, agent_metrics = mini_batch_vmap(
         _compute_candidate_fitness, num_mini_batches
     )(_rng, candidate_params, repeated_agent_states)
 
@@ -195,6 +195,7 @@ def lpg_es_train_step(
             "min": jnp.min(fitness),
             "min": jnp.max(fitness),
             "var": jnp.var(fitness),
-        }
+        },
+        "lpg_agent": jax.tree_map(jnp.mean, agent_metrics.as_dict()),
     }
     return lpg_train_state, agent_states, None, metrics

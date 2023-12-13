@@ -17,6 +17,15 @@ class LPGAgentMetrics:
     critic_l2: float
     critic_entropy: float
 
+    def as_dict(self):
+        return {
+            "policy_l2": self.policy_l2,
+            "policy_entropy": self.policy_entropy,
+            "critic_loss": self.critic_loss,
+            "critic_l2": self.critic_l2,
+            "critic_entropy": self.critic_entropy,
+        }
+
 
 def lpg_agent_train_step(
     actor_state: TrainState,

@@ -15,7 +15,9 @@ def parse_args(cmd_args=sys.argv[1:]):
     parser.add_argument(
         "--env_name", help="Environment name", type=str, default="GridWorld-v0"
     )
-    parser.add_argument("--env_mode", help="Environment mode", type=str, default="all")
+    parser.add_argument(
+        "--env_mode", help="Environment mode", type=str, default="all_vrandlife"
+    )
     parser.add_argument(
         "--env_workers",
         help="Number of environment workers per agent",
@@ -39,7 +41,7 @@ def parse_args(cmd_args=sys.argv[1:]):
         "--num_mini_batches",
         help="Number of meta-training mini-batches",
         type=int,
-        default=8,
+        default=16,
     )
 
     # Logging
@@ -186,4 +188,8 @@ def parse_args(cmd_args=sys.argv[1:]):
     args, rest_args = parser.parse_known_args(cmd_args)
     if rest_args:
         raise ValueError(f"Unknown args {rest_args}")
+    if args.num_agents % args.num_mini_batches != 0:
+        raise ValueError(
+            f"Number of agents ({args.num_agents}) must be divisible by number of mini-batches ({args.num_mini_batches})"
+        )
     return args

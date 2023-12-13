@@ -47,18 +47,18 @@ def lpg_meta_grad_train_step(
             )
 
             # --- Rollout updated agent ---
-            rng, reset_rng, rollout_rng = jax.random.split(rng, 3)
-            eval_obs, eval_state = rollout_manager.batch_reset(
-                reset_rng, agent_state.level.env_params, num_env_workers
-            )
-            eval_rollouts = rollout_manager.batch_rollout(
-                rollout_rng,
+            rng, _rng = jax.random.split(rng)
+            eval_rollouts, env_obs, env_state, _ = rollout_manager.batch_rollout(
+                _rng,
                 agent_state.actor_state,
                 agent_state.level.env_params,
-                eval_obs,
-                eval_state,
-                eval=True,
-            )[0]
+                agent_state.env_obs,
+                agent_state.env_state,
+            )
+            agent_state = agent_state.replace(
+                env_obs=env_obs,
+                env_state=env_state,
+            )
 
             # --- Update value function ---
             def _compute_value_loss(critic_params):

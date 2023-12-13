@@ -10,16 +10,16 @@
 </p>
 
 GROOVE is the official implementation of the following publications:
-1. *Discovering General Reinforcement Learning Algorithms with Adversarial Environment Design, NeurIPS 2023* [ [ArXiv](https://arxiv.org/abs/2310.02782) | [NeurIPS](https://neurips.cc/virtual/2023/poster/70658) | [Twitter](https://twitter.com/JacksonMattT/status/1709955868467626058) ]
+1. *Discovering General Reinforcement Learning Algorithms with Adversarial Environment Design, NeurIPS 2023* [[ArXiv](https://arxiv.org/abs/2310.02782) | [NeurIPS](https://neurips.cc/virtual/2023/poster/70658) | [Twitter](https://twitter.com/JacksonMattT/status/1709955868467626058)]
    * Learned Policy Gradient (**LPG**),
    * Prioritized Level Replay (**PLR**),
    * General RL Algorithms Obtained Via Environment Design (**GROOVE**),
    * Grid-World environment from the LPG paper.
-2. *Discovering Temporally-Aware Reinforcement Learning Algorithms, ALOE 2023* [ [OpenReview](https://openreview.net/forum?id=MJJcs3zbmi) ]
+2. *Discovering Temporally-Aware Reinforcement Learning Algorithms, ALOE 2023*
    * Temporally-Aware LPG (**TA-LPG**),
    * Evolutionary Strategies (**ES**) with antithetic task sampling.
 
-All scripts are JIT-compiled end-to-end and makes extensive use of JAX-based parallelization, enabling meta-training in *under 3 hours* on a single GPU!
+All scripts are JIT-compiled end-to-end and make extensive use of JAX-based parallelization, enabling meta-training in *under 3 hours* on a single GPU!
 
 [**Setup**](#setup) | [**Running experiments**](#running-experiments) | [**Citation**](#cite)
 
@@ -52,13 +52,22 @@ echo [KEY] > setup/wandb_key
 ```
 
 # Running experiments
-Meta-training is executed with `python train.py`, with all arguments found in [`experiments/parse_args.py`](https://github.com/EmptyJackson/groove/blob/main/experiments/parse_args.py).
+Meta-training is executed with `python3 train.py`, with all arguments found in [`experiments/parse_args.py`](https://github.com/EmptyJackson/groove/blob/main/experiments/parse_args.py).
+* `--log --wandb_entity [entity] --wandb_project [project]` enables logging to WandB.
+* `--num_agents [agents]` sets the meta-training batch size.
+* `--num_mini_batches [mini_batches]` computes each update in sequential mini-batches, in order to execute large batches with little memory. RECOMMENDED: lower this to the smallest value that fits in memory.
+* `--debug` disables JIT compilation.
 
 ### Docker
 To execute CPU or GPU docker containers, run the relevant script (with the GPU index as the first argument for the GPU script).
 ```
-./run_gpu.sh [GPU id] python train.py [args]
+./run_gpu.sh [GPU id] python3 train.py [args]
 ```
+
+### Examples
+* LPG: `python3 train.py --num_agents 512 --num_mini_batches 16 --log --wandb_entity [entity] --wandb_project [project]`
+* GROOVE: LPG with `--score_function alg_regret`
+* TA-LPG: LPG with `--num_mini_batches 8 --use_es --lifetime_conditioning`
 
 # Citation
 If you use this implementation in your work, please cite us with the following:

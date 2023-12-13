@@ -26,7 +26,6 @@ def lpg_meta_grad_train_step(
     Update a batch of agents with LPG, then update LPG with regularized final agent loss.
     """
     num_agents = agent_states.env_obs.shape[0]
-    num_env_workers = agent_states.env_obs.shape[1]
     agent_train_fn = partial(
         train_lpg_agent,
         rollout_manager=rollout_manager,
@@ -34,82 +33,74 @@ def lpg_meta_grad_train_step(
         agent_target_coeff=lpg_hypers.agent_target_coeff,
     )
 
-    def _train_agents(lpg_params, rng):
-        """Train and evaluate a batch of agents with LPG."""
+    def _train_agent(lpg_params, rng, agent_state, value_critic_state):
+        """Perform K agent train steps then evaluate an agent."""
         _lpg_train_state = lpg_train_state.replace(params=lpg_params)
 
-        def _train_agent(rng, agent_state, value_critic_state):
-            """Perform K agent train steps then evaluate an agent."""
-            # --- Perform K agent train steps ---
-            rng, _rng = jax.random.split(rng)
-            agent_state, agent_metrics = agent_train_fn(
-                _rng, _lpg_train_state, agent_state
-            )
+        # --- Perform K agent train steps ---
+        rng, _rng = jax.random.split(rng)
+        agent_state, agent_metrics = agent_train_fn(_rng, _lpg_train_state, agent_state)
 
-            # --- Rollout updated agent ---
-            rng, _rng = jax.random.split(rng)
-            eval_rollouts, env_obs, env_state, _ = rollout_manager.batch_rollout(
-                _rng,
-                agent_state.actor_state,
-                agent_state.level.env_params,
-                agent_state.env_obs,
-                agent_state.env_state,
-            )
-            agent_state = agent_state.replace(
-                env_obs=env_obs,
-                env_state=env_state,
-            )
+        # --- Rollout updated agent ---
+        rng, _rng = jax.random.split(rng)
+        eval_rollouts, env_obs, env_state, _ = rollout_manager.batch_rollout(
+            _rng,
+            agent_state.actor_state,
+            agent_state.level.env_params,
+            agent_state.env_obs,
+            agent_state.env_state,
+        )
+        agent_state = agent_state.replace(
+            env_obs=env_obs,
+            env_state=env_state,
+        )
 
-            # --- Update value function ---
-            def _compute_value_loss(critic_params):
-                value_critic_state.replace(params=critic_params)
-                value_loss, adv = jax.vmap(
-                    compute_advantage, in_axes=(None, 0, None, None)
-                )(value_critic_state, eval_rollouts, gamma, gae_lambda)
-                return value_loss.mean(), adv
+        # --- Update value function ---
+        def _compute_value_loss(critic_params):
+            value_critic_state.replace(params=critic_params)
+            value_loss, adv = jax.vmap(
+                compute_advantage, in_axes=(None, 0, None, None)
+            )(value_critic_state, eval_rollouts, gamma, gae_lambda)
+            return value_loss.mean(), adv
 
-            (value_loss, adv), value_critic_grad = jax.value_and_grad(
-                _compute_value_loss, has_aux=True
-            )(value_critic_state.params)
-            value_critic_state = value_critic_state.apply_gradients(
-                grads=value_critic_grad
-            )
+        (value_loss, adv), value_critic_grad = jax.value_and_grad(
+            _compute_value_loss, has_aux=True
+        )(value_critic_state.params)
+        value_critic_state = value_critic_state.apply_gradients(grads=value_critic_grad)
 
-            # --- Compute regularized LPG loss ---
-            def _compute_lpg_loss(rollout, adv):
-                actor = agent_state.actor_state
-                action_probs = actor.apply_fn({"params": actor.params}, rollout.obs)
-                sampled_log_probs = gather(jnp.log(action_probs + 1e-8), rollout.action)
-                return -jnp.multiply(sampled_log_probs, adv)
+        # --- Compute regularized LPG loss ---
+        def _compute_lpg_loss(rollout, adv):
+            actor = agent_state.actor_state
+            action_probs = actor.apply_fn({"params": actor.params}, rollout.obs)
+            sampled_log_probs = gather(jnp.log(action_probs + 1e-8), rollout.action)
+            return -jnp.multiply(sampled_log_probs, adv)
 
-            lpg_loss = jax.vmap(_compute_lpg_loss)(eval_rollouts, adv).mean()
-            reg_lpg_loss = (
-                lpg_loss
-                - lpg_hypers.policy_entropy_coeff * agent_metrics.policy_entropy
-                + lpg_hypers.policy_l2_coeff * agent_metrics.policy_l2
-                - lpg_hypers.target_entropy_coeff * agent_metrics.critic_entropy
-                + lpg_hypers.target_l2_coeff * agent_metrics.critic_l2
-            )
-            metrics = {
-                "lpg_loss": lpg_loss,
-                "reg_lpg_loss": reg_lpg_loss,
-                "value_loss": value_loss,
-                "lpg_agent": agent_metrics,
-            }
-            return reg_lpg_loss, agent_state, value_critic_state, metrics
+        lpg_loss = jax.vmap(_compute_lpg_loss)(eval_rollouts, adv).mean()
+        reg_lpg_loss = (
+            lpg_loss
+            - lpg_hypers.policy_entropy_coeff * agent_metrics.policy_entropy
+            + lpg_hypers.policy_l2_coeff * agent_metrics.policy_l2
+            - lpg_hypers.target_entropy_coeff * agent_metrics.critic_entropy
+            + lpg_hypers.target_l2_coeff * agent_metrics.critic_l2
+        )
+        metrics = {
+            "lpg_loss": lpg_loss,
+            "reg_lpg_loss": reg_lpg_loss,
+            "value_loss": value_loss,
+            "lpg_agent": agent_metrics,
+        }
+        return reg_lpg_loss, (agent_state, value_critic_state, metrics)
 
-        rng = jax.random.split(rng, num_agents)
-        loss, updated_agents, updated_value_critics, metrics = mini_batch_vmap(
-            _train_agent, num_mini_batches
-        )(rng, agent_states, value_critic_states)
-        return loss.mean(), (updated_agents, updated_value_critics, metrics)
+    # --- Compute LPG gradient for each agent ---
+    rng = jax.random.split(rng, num_agents)
+    _grad_fn = partial(jax.grad(_train_agent, has_aux=True), lpg_train_state.params)
+    lpg_grad, (agent_states, value_critic_states, metrics) = mini_batch_vmap(
+        _grad_fn, num_mini_batches
+    )(rng, agent_states, value_critic_states)
 
-    # --- Compute LPG gradient and update LPG ---
-    lpg_grad, (agent_states, value_critic_states, metrics) = jax.grad(
-        _train_agents, has_aux=True
-    )(lpg_train_state.params, rng)
+    # --- Accumulate gradients and update LPG ---
+    lpg_grad, metrics = jax.tree_map(jnp.mean, (lpg_grad, metrics))
     lpg_train_state = lpg_train_state.apply_gradients(grads=lpg_grad)
-    metrics = jax.tree_map(jnp.mean, metrics)
     return lpg_train_state, agent_states, value_critic_states, metrics
 
 

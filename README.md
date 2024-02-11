@@ -15,7 +15,7 @@ GROOVE is the official implementation of the following publications:
    * Prioritized Level Replay (**PLR**),
    * General RL Algorithms Obtained Via Environment Design (**GROOVE**),
    * Grid-World environment from the LPG paper.
-2. *Discovering Temporally-Aware Reinforcement Learning Algorithms, ALOE 2023* [[ArXiv](https://arxiv.org/abs/2402.05828)]
+2. *Discovering Temporally-Aware Reinforcement Learning Algorithms, ICLR 2024* [[ArXiv](https://arxiv.org/abs/2402.05828)]
    * Temporally-Aware LPG (**TA-LPG**),
    * Evolutionary Strategies (**ES**) with antithetic task sampling.
 

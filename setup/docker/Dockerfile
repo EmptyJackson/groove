@@ -34,8 +34,8 @@ WORKDIR /home/duser
 
 # Install Python packages
 ENV PATH="/home/duser/.local/bin:$PATH"
-RUN python3 -m pip install --upgrade pip
+RUN python3.8 -m pip install --upgrade pip
 ARG REQS
-RUN pip install $REQS -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
+RUN python3.8 -m pip install $REQS -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
 
 WORKDIR /home/duser/groove

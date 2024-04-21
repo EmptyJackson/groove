@@ -193,7 +193,7 @@ def lpg_es_train_step(
         "fitness": {
             "mean": jnp.mean(fitness),
             "min": jnp.min(fitness),
-            "min": jnp.max(fitness),
+            "max": jnp.max(fitness),
             "var": jnp.var(fitness),
         },
         "lpg_agent": jax.tree_map(jnp.mean, agent_metrics.as_dict()),

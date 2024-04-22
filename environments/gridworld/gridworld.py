@@ -94,11 +94,9 @@ class GridWorld(environment.Environment):
         else:
             # Generate new object positions for respawned objects
             max_grid_idxs = jnp.arange(self.max_grid_size**2)
-            p_vacant = jnp.logical_and(max_grid_idxs < params.grid_size**2,
-                                    jnp.logical_not(jnp.isin(max_grid_idxs, pos)),
-                                    jnp.logical_not(jnp.isin(max_grid_idxs, params.walls)))
-            p_vacant = p_vacant.at[old_obj_poss].set(False)
-            p_vacant = jnp.divide(p_vacant, jnp.sum(p_vacant))
+            valid_idxs = self._get_valid_obj_idxs(pos, params)
+            valid_idxs = valid_idxs.at[old_obj_poss].set(False)
+            p_vacant = jnp.divide(valid_idxs, jnp.sum(valid_idxs))
             random_obj_poss = jax.random.choice(obj_key, max_grid_idxs, (self.max_n_objs,), p=p_vacant, replace=False)
             use_new_poss = jnp.logical_and(jnp.logical_not(state.obj_existss), respawn)
             new_obj_poss = jnp.where(use_new_poss, random_obj_poss, old_obj_poss)
@@ -147,6 +145,14 @@ class GridWorld(environment.Environment):
         next_pos = pos + step
         return jnp.where(params.walls[next_pos], pos, next_pos)
 
+    def _get_valid_obj_idxs(self, pos, params):
+        max_grid_idxs = jnp.arange(self.max_grid_size**2)
+        valid_idxs = jnp.logical_and(
+                jnp.logical_not(jnp.isin(max_grid_idxs, pos)),
+                jnp.logical_not(jnp.isin(max_grid_idxs, params.walls)),
+            )
+        return jnp.logical_and(max_grid_idxs < params.grid_size**2, valid_idxs)
+
     def reset_env(
         self, key: chex.PRNGKey, params: EnvParams
     ) -> Tuple[chex.Array, EnvState]:
@@ -159,9 +165,7 @@ class GridWorld(environment.Environment):
         else:
             # Select random or static object position
             max_grid_idxs = jnp.arange(self.max_grid_size**2)
-            valid_idxs = jnp.logical_and(max_grid_idxs < params.grid_size**2,
-                                        jnp.logical_not(jnp.isin(max_grid_idxs, pos)),
-                                        jnp.logical_not(jnp.isin(max_grid_idxs, params.walls)))
+            valid_idxs = self._get_valid_obj_idxs(pos, params)
             p = jnp.divide(valid_idxs, jnp.sum(valid_idxs))
             random_obj_poss = jax.random.choice(obj_key, max_grid_idxs, (self.max_n_objs,), p=p, replace=False)
             obj_poss = jnp.where(params.random_respawn, random_obj_poss, params.static_obj_poss)

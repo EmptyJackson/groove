@@ -3,6 +3,8 @@
 <p align="center">
     <a href= "https://arxiv.org/abs/2310.02782">
         <img src="https://img.shields.io/badge/arXiv-2310.02782-b31b1b.svg" /></a>
+    <a href= "https://arxiv.org/abs/2402.05828">
+        <img src="https://img.shields.io/badge/arXiv-2402.05828-b31b1b.svg" /></a>
     <a href= "https://github.com/psf/black">
         <img src="https://img.shields.io/badge/code%20style-black-000000.svg" /></a>
     <a href= "https://github.com/EmptyJackson/groove/blob/main/LICENSE">
@@ -20,6 +22,8 @@ GROOVE is the official implementation of the following publications:
    * Evolutionary Strategies (**ES**) with antithetic task sampling.
 
 All scripts are JIT-compiled end-to-end and make extensive use of JAX-based parallelization, enabling meta-training in *under 3 hours* on a single GPU!
+
+**Update (April 2023)**: Misreported LPG ES hyperparameters in repo + paper, specifically initial learning rate (`1e-4` -> `1e-2`) and sigma (`3e-3` -> `1e-1`). Now updated.
 
 [**Setup**](#setup) | [**Running experiments**](#running-experiments) | [**Citation**](#citation)
 
@@ -52,22 +56,22 @@ echo [KEY] > setup/wandb_key
 ```
 
 # Running experiments
-Meta-training is executed with `python3 train.py`, with all arguments found in [`experiments/parse_args.py`](https://github.com/EmptyJackson/groove/blob/main/experiments/parse_args.py).
+Meta-training is executed with `python3.8 train.py`, with all arguments found in [`experiments/parse_args.py`](https://github.com/EmptyJackson/groove/blob/main/experiments/parse_args.py).
 * `--log --wandb_entity [entity] --wandb_project [project]` enables logging to WandB.
 * `--num_agents [agents]` sets the meta-training batch size.
-* `--num_mini_batches [mini_batches]` computes each update in sequential mini-batches, in order to execute large batches with little memory. RECOMMENDED: lower this to the smallest value that fits in memory.
+* `--num_mini_batches [mini_batches]` computes each update in sequential mini-batches, in order to execute large batches with little memory. *RECOMMENDED: lower this to the smallest value that fits in memory.*
 * `--debug` disables JIT compilation.
 
 ### Docker
 To execute CPU or GPU docker containers, run the relevant script (with the GPU index as the first argument for the GPU script).
 ```
-./run_gpu.sh [GPU id] python3 train.py [args]
+./run_gpu.sh [GPU id] python3.8 train.py [args]
 ```
 
 ### Examples
-* LPG: `python3 train.py --num_agents 512 --num_mini_batches 16 --log --wandb_entity [entity] --wandb_project [project]`
+* LPG: `python3.8 train.py --num_agents 512 --num_mini_batches 16 --log --wandb_entity [entity] --wandb_project [project]`
 * GROOVE: LPG with `--score_function alg_regret`
-* TA-LPG: LPG with `--num_mini_batches 8 --use_es --lifetime_conditioning`
+* TA-LPG: LPG with `--num_mini_batches 8 --use_es --lifetime_conditioning --lpg_learning_rate 0.01`
 
 # Citation
 If you use this implementation in your work, please cite us with the following:
@@ -78,6 +82,15 @@ If you use this implementation in your work, please cite us with the following:
     title = {Discovering General Reinforcement Learning Algorithms with Adversarial Environment Design},
     volume = {36},
     year = {2023}
+}
+```
+```
+@inproceedings{jackson2024discovering,
+    author={Jackson, Matthew Thomas and Lu, Chris and Kirsch, Louis and Lange, Robert Tjarko and Whiteson, Shimon and Foerster, Jakob Nicolaus},
+    booktitle = {International Conference on Learning Representations},
+    title = {Discovering Temporally-Aware Reinforcement Learning Algorithms},
+    volume = {12},
+    year = {2024}
 }
 ```
 

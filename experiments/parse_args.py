@@ -144,9 +144,9 @@ def parse_args(cmd_args=sys.argv[1:]):
     parser.add_argument("--use_es", action="store_true", help="Optimize LPG with ES")
     parser.add_argument("--es_lrate_decay", type=float, default=0.999)
     parser.add_argument("--es_lrate_limit", type=float, default=1e-5)
-    parser.add_argument("--es_sigma_init", type=float, default=0.003)
+    parser.add_argument("--es_sigma_init", type=float, default=0.1)
     parser.add_argument("--es_sigma_decay", type=float, default=1.0)
-    parser.add_argument("--es_sigma_limit", type=float, default=0.001)
+    parser.add_argument("--es_sigma_limit", type=float, default=0.1)
     parser.add_argument("--es_mean_decay", type=float, default=0.0)
 
     # TA-LPG

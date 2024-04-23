@@ -30,18 +30,20 @@ def create_lpg_train_state(rng, args):
     return ESTrainState(train_state, es_strategy, es_params, es_state)
 
 
-def make_lpg_train_step(args, rollout_manager):
+def make_lpg_train_step(args, level_sampler):
     lpg_hypers = LpgHyperparams.from_run_args(args)
     if args.use_es:
+        # Train an agent entirely when using ES
+        lpg_hypers = lpg_hypers.replace(num_agent_updates=level_sampler.max_lifetime)
         return partial(
             lpg_es_train_step,
-            rollout_manager=rollout_manager,
+            rollout_manager=level_sampler.rollout_manager,
             num_mini_batches=args.num_mini_batches,
             lpg_hypers=lpg_hypers,
         )
     return partial(
         lpg_meta_grad_train_step,
-        rollout_manager=rollout_manager,
+        rollout_manager=level_sampler.rollout_manager,
         num_mini_batches=args.num_mini_batches,
         gamma=args.gamma,
         gae_lambda=args.gae_lambda,

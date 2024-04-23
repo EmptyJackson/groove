@@ -27,7 +27,7 @@ def make_train(args):
         )
 
         # --- TRAIN LOOP ---
-        lpg_train_step_fn = make_lpg_train_step(args, level_sampler.rollout_manager)
+        lpg_train_step_fn = make_lpg_train_step(args, level_sampler)
 
         def _meta_train_loop(carry, _):
             rng, train_state, agent_states, value_critic_states, level_buffer = carry

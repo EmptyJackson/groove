@@ -10,7 +10,10 @@ class Actor(nn.Module):
 
     @nn.compact
     def __call__(self, x):
-        x = MLP((*self.layers, self.n_actions))(x)
+        if self.layers:
+            x = MLP((*self.layers, self.n_actions))(x)
+        else:
+            x = nn.Dense(self.n_actions, use_bias=False)(x)
         return nn.softmax(x)
 
 
@@ -33,7 +36,10 @@ class Critic(nn.Module):
 
     @nn.compact
     def __call__(self, x):
-        x = MLP((*self.layers, self.critic_dims))(x)
+        if self.layers:
+            x = MLP((*self.layers, self.critic_dims))(x)
+        else:
+            x = nn.Dense(self.critic_dims, use_bias=False)(x)
         if self.critic_dims > 1:
             return nn.softmax(x)
         return x

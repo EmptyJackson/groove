@@ -79,9 +79,9 @@ Meta-training is executed with `python3.8 train.py`, with all arguments found in
 ### Examples
 | Experiment | Command | Example run (WandB) |
 | --- | --- | --- |
-| LPG (meta-gradient) | `python3.8 train.py --num_agents 512 --num_mini_batches 16 --log --wandb_entity [entity] --wandb_project [project]` | [Link](https://api.wandb.ai/links/mjackson/4xbnkrmd) |
+| LPG (meta-gradient) | `python3.8 train.py --num_agents 512 --num_mini_batches 16 --train_steps 5000 --log --wandb_entity [entity] --wandb_project [project]` | [Link](https://api.wandb.ai/links/mjackson/4xbnkrmd) |
 | GROOVE | LPG with `--score_function alg_regret` (algorithmic regret is computed every step due to end-to-end compilation, so currently very inefficient) | TBC |
-| TA-LPG | LPG with `--num_mini_batches 8 --use_es --lifetime_conditioning --lpg_learning_rate 0.01 --env_mode all_vrandlife` | TBC |
+| TA-LPG | LPG with `--num_mini_batches 8 --train_steps 2500 --use_es --lifetime_conditioning --lpg_learning_rate 0.01 --env_mode all_vrandlife` | TBC |
 
 
 ### Docker

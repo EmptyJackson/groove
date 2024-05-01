@@ -39,7 +39,9 @@ def lpg_meta_grad_train_step(
 
         # --- Perform K agent train steps ---
         rng, _rng = jax.random.split(rng)
-        agent_state, agent_metrics = agent_train_fn(_rng, _lpg_train_state, agent_state)
+        agent_state, rollouts, agent_metrics = agent_train_fn(
+            _rng, _lpg_train_state, agent_state
+        )
 
         # --- Rollout updated agent ---
         rng, _rng = jax.random.split(rng)
@@ -56,19 +58,32 @@ def lpg_meta_grad_train_step(
         )
 
         # --- Update value function ---
-        def _compute_value_loss(critic_params):
+        def _compute_value_loss(critic_params, rollouts):
             value_critic_state.replace(params=critic_params)
             value_loss, adv = jax.vmap(
                 compute_advantage, in_axes=(None, 0, None, None)
-            )(value_critic_state, eval_rollouts, gamma, gae_lambda)
+            )(value_critic_state, rollouts, gamma, gae_lambda)
             return value_loss.mean(), adv
 
-        (value_loss, adv), value_critic_grad = jax.value_and_grad(
-            _compute_value_loss, has_aux=True
-        )(value_critic_state.params)
-        value_critic_state = value_critic_state.apply_gradients(grads=value_critic_grad)
+        def _update_critic(value_critic_state, rollouts):
+            losses, value_critic_grad = jax.value_and_grad(
+                _compute_value_loss, has_aux=True
+            )(value_critic_state.params, rollouts)
+            return value_critic_state.apply_gradients(grads=value_critic_grad), losses
+
+        # Iteratively update on train rollouts
+        value_critic_state, _ = jax.lax.scan(
+            _update_critic, value_critic_state, rollouts
+        )
+        # Update critic on evaluation rollout
+        value_critic_state, (value_loss, adv) = _update_critic(
+            value_critic_state, eval_rollouts
+        )
 
         # --- Compute regularized LPG loss ---
+        # Normalize advantage across batch
+        adv = jnp.divide(jnp.subtract(adv, jnp.mean(adv)), jnp.std(adv) + 1e-8)
+
         def _compute_lpg_loss(rollout, adv):
             actor = agent_state.actor_state
             action_probs = actor.apply_fn({"params": actor.params}, rollout.obs)
@@ -157,7 +172,7 @@ def lpg_es_train_step(
         rng, _rng = jax.random.split(rng)
 
         # --- Train an agent using LPG with candidate parameters ---
-        agent_state, metrics = agent_train_fn(
+        agent_state, _, metrics = agent_train_fn(
             rng=_rng,
             lpg_train_state=candidate_train_state,
             agent_state=agent_state,

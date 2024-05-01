@@ -57,21 +57,38 @@ echo [KEY] > setup/wandb_key
 
 # Running experiments
 Meta-training is executed with `python3.8 train.py`, with all arguments found in [`experiments/parse_args.py`](https://github.com/EmptyJackson/groove/blob/main/experiments/parse_args.py).
-* `--log --wandb_entity [entity] --wandb_project [project]` enables logging to WandB.
-* `--num_agents [agents]` sets the meta-training batch size.
-* `--num_mini_batches [mini_batches]` computes each update in sequential mini-batches, in order to execute large batches with little memory. *RECOMMENDED: lower this to the smallest value that fits in memory.*
-* `--debug` disables JIT compilation.
+| Argument | Description |
+| --- | --- |
+| `--env_mode [env_mode]` | Sets the environment mode (below). |
+| `--num_agents [agents]` | Sets the meta-training batch size. |
+| `--num_mini_batches [mini_batches]` | Computes each update in sequential mini-batches, in order to execute large batches with little memory. *RECOMMENDED: lower this to the smallest value that fits in memory.* |
+| `--debug` | Disables JIT compilation. |
+| `--log --wandb_entity [entity] --wandb_project [project]` | Enables logging to WandB. |
+
+
+### Grid-World environments
+
+| Environment mode | Description | Lifetime (# of updates) |
+| --- | --- | --- |
+|`tabular`|Five tabular levels from [LPG](https://arxiv.org/abs/2007.08794)|Variable|
+|`mazes`|Maze levels from [MiniMax](https://github.com/facebookresearch/minimax)|2500|
+|`all_shortlife`|Uniformly sampled levels|250|
+|`all_vrandlife`|Uniformly sampled levels|10-250 (Log-sampled)|
+
+
+### Examples
+| Experiment | Command |
+| --- | --- |
+| LPG (meta-gradient) | `python3.8 train.py --num_agents 512 --num_mini_batches 16 --log --wandb_entity [entity] --wandb_project [project]` |
+| GROOVE | LPG with `--score_function alg_regret` (algorithmic regret is computed every step due to end-to-end compulation, so currently very inefficient) |
+| TA-LPG | LPG with `--num_mini_batches 8 --use_es --lifetime_conditioning --lpg_learning_rate 0.01 --env_mode all_vrandlife` |
+
 
 ### Docker
 To execute CPU or GPU docker containers, run the relevant script (with the GPU index as the first argument for the GPU script).
 ```
 ./run_gpu.sh [GPU id] python3.8 train.py [args]
 ```
-
-### Examples
-* LPG: `python3.8 train.py --num_agents 512 --num_mini_batches 16 --log --wandb_entity [entity] --wandb_project [project]`
-* GROOVE: LPG with `--score_function alg_regret`
-* TA-LPG: LPG with `--num_mini_batches 8 --use_es --lifetime_conditioning --lpg_learning_rate 0.01`
 
 # Citation
 If you use this implementation in your work, please cite us with the following:
@@ -96,5 +113,6 @@ If you use this implementation in your work, please cite us with the following:
 
 # Coming soon
 
+* Speed up GROOVE by removing recomputation of algorithmic regret every step.
 * Meta-testing script for checkpointed models.
 * Alternative UED metrics (PVL, MaxMC).

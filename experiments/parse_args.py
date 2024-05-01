@@ -16,7 +16,7 @@ def parse_args(cmd_args=sys.argv[1:]):
         "--env_name", help="Environment name", type=str, default="GridWorld-v0"
     )
     parser.add_argument(
-        "--env_mode", help="Environment mode", type=str, default="all_vrandlife"
+        "--env_mode", help="Environment mode", type=str, default="all_shortlife"
     )
     parser.add_argument(
         "--env_workers",

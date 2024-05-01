@@ -126,14 +126,14 @@ def train_lpg_agent(
         metrics = LPGAgentMetrics(
             pi_l2, actor_entropy, critic_loss, y_l2, critic_entropy
         )
-        return (rng, agent_state), metrics
+        return (rng, agent_state), (rollout, metrics)
 
     # --- Perform K agent updates ---
-    carry_out, metrics = jax.lax.scan(
+    carry_out, (rollout, metrics) = jax.lax.scan(
         _train_step,
         (rng, agent_state),
         None,
         length=num_train_steps,
     )
     _, agent_state = carry_out
-    return agent_state, jax.tree_map(jnp.mean, metrics)
+    return agent_state, rollout, jax.tree_map(jnp.mean, metrics)

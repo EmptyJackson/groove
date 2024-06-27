@@ -263,6 +263,7 @@ ENV_MODE_PARAMS = {
         "grid_size": 11,
         "wall_idxs": jnp.array([], dtype=jnp.int32),
         "tabular": False,
+        "auto_collect": True,
     },
     "rand_small": {
         "manual": False,

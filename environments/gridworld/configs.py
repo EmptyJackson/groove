@@ -263,6 +263,7 @@ ENV_MODE_PARAMS = {
         "grid_size": 11,
         "wall_idxs": jnp.array([], dtype=jnp.int32),
         "tabular": False,
+        "auto_collect": True,
     },
     "rand_small": {
         "manual": False,
@@ -380,6 +381,21 @@ ENV_MODE_PARAMS = {
         "grid_size": partial(random.choice, a=jnp.arange(4, 11)),
         "wall_idxs": partial(uniform_wall_idxs, n_walls=15, max_grid_size=10),
         "tabular": True,
+        "auto_collect": True,
+    },
+    "rand_all": {
+        "manual": False,
+        "max_steps_in_episode": partial(
+            log_uniform_int, shape=(), minval=20, maxval=750
+        ),
+        "obj_ids": [0, 1, 2, 3, 4],
+        "obj_rewards": partial(uniform_first_pos, n=5, minval=-1.0, maxval=1.0),
+        "obj_p_terminate": partial(log_uniform, shape=(5,), minval=1e-2, maxval=1.0),
+        "obj_p_respawn": partial(log_uniform, shape=(5,), minval=1e-3, maxval=1e-1),
+        "n_objs": partial(random.choice, a=jnp.arange(1, 6)),
+        "grid_size": partial(random.choice, a=jnp.arange(4, 11)),
+        "wall_idxs": partial(uniform_wall_idxs, n_walls=15, max_grid_size=10),
+        "tabular": False,
         "auto_collect": True,
     },
     "debug": {
@@ -510,6 +526,12 @@ ENV_MODE_KWARGS = {
         "max_grid_size": 10,
         "tabular": True,
     },
+    "rand_all": {
+        "max_n_objs": 5,
+        "max_n_obj_types": 5,
+        "max_grid_size": 10,
+        "tabular": False,
+    },
     "debug": {
         "max_n_objs": 2,
         "max_n_obj_types": 2,
@@ -540,6 +562,7 @@ ENV_MODE_EPISODE_LEN = {
     "medium": 250,
     "large": 750,
     "all": 750,
+    "rand_all": 750,
     "debug": 10,
     # Mazes
     **{maze: 50 for maze in MAZE_DESIGNS},
@@ -599,6 +622,7 @@ ENV_MODE_LIFETIME = {
     "medium": lambda _: _MEDIUM_LIFETIME,
     "large": lambda _: _LARGE_LIFETIME,
     "all": lambda _: _MEDIUM_LIFETIME,
+    "rand_all": lambda _: _RAND_LIFETIME,
     "all_shortlife": lambda _: _SMALL_LIFETIME,
     "all_randlife": partial(
         log_uniform_int, shape=(), minval=_SMALL_LIFETIME // 5, maxval=_SMALL_LIFETIME
@@ -672,6 +696,7 @@ MODE_AGENT_HYPERS = {
     "medium": _TABULAR_HYPERS,
     "large": _TABULAR_HYPERS,
     "all": _TABULAR_HYPERS,
+    "all_rand": _RAND_HYPERS,
     "all_shortlife": _TABULAR_HYPERS,
     "all_randlife": _TABULAR_HYPERS,
     "all_vrandlife": _TABULAR_HYPERS,

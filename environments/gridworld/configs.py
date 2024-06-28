@@ -696,7 +696,7 @@ MODE_AGENT_HYPERS = {
     "medium": _TABULAR_HYPERS,
     "large": _TABULAR_HYPERS,
     "all": _TABULAR_HYPERS,
-    "all_rand": _RAND_HYPERS,
+    "rand_all": _RAND_HYPERS,
     "all_shortlife": _TABULAR_HYPERS,
     "all_randlife": _TABULAR_HYPERS,
     "all_vrandlife": _TABULAR_HYPERS,
